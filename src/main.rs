@@ -2,37 +2,45 @@ use std::fs::File;
 use std::ops::Range;
 
 type Coords = (u32, u32);
+type Pixel = (u8, u8, u8, u8, bool);
 
 pub struct Image {
-    bytes: Vec<u8>,
+    pixels: Vec<Pixel>,
     pub width: u32,
     pub height: u32,
 }
 
 impl Image {
-    fn new(bytes: Vec<u8>, width: u32, height: u32) -> Self {
+    fn new(pixels: Vec<Pixel>, width: u32, height: u32) -> Self {
         return Self {
-            bytes,
+            pixels,
             width,
             height,
         };
     }
 
-    fn get_pixel(&self, coords: Coords) -> [u8; 4] {
+    fn get_pixel(&self, coords: Coords) -> Pixel {
         let (x, y) = coords;
-        let base_index = ((self.width * y * 4) + (x * 4)) as usize;
-
-        [
-            self.bytes[base_index],
-            self.bytes[base_index + 1],
-            self.bytes[base_index + 2],
-            self.bytes[base_index + 3],
-        ]
+        self.pixels[(x + y * self.height) as usize]
     }
 
     fn is_valid_coords(&self, coords: Coords) -> bool {
         let (x, y) = coords;
         x < self.width && y < self.height
+    }
+
+    fn pixel_is_checked(&self, coords: Coords) -> bool {
+        let pixel = self.get_pixel(coords);
+        pixel.4
+    }
+
+    fn set_pixel_is_checked(&mut self, coords: Coords, is_checked: bool) {
+        let (x, y) = coords;
+        let pixel = self.pixels
+            .get_mut((x + y * self.height) as usize)
+            .unwrap();
+
+        pixel.4 = is_checked;
     }
 }
 
@@ -47,7 +55,12 @@ pub fn read_png(path: &str) -> Image {
     let mut buf = vec![0; info.buffer_size()];
     reader.next_frame(&mut buf).unwrap();
 
-    return Image::new(buf, info.width, info.height);
+    let pixels = buf
+        .chunks(4)
+        .map(|x| (x[0], x[1], x[2], x[3], false))
+        .collect();
+
+    return Image::new(pixels, info.width, info.height);
 }
 
 fn compare_pixels(image: &Image, a_coords: Coords, b_coords: Coords) -> bool {
@@ -135,7 +148,7 @@ fn get_next_pixel_coords(image: &Image, coords: Coords, path: &Vec<Coords>) -> O
     None
 }
 
-fn get_edge_path(image: &Image, start_coords: Coords) -> Vec<Coords> {
+fn get_edge_path(image: &mut Image, start_coords: Coords) -> Vec<Coords> {
     let mut pixel_coords = start_coords;
     let mut path = vec![start_coords];
 
@@ -146,11 +159,11 @@ fn get_edge_path(image: &Image, start_coords: Coords) -> Vec<Coords> {
         };
 
         path.push(pixel_coords);
+        image.set_pixel_is_checked(pixel_coords, true);
     }
 }
 
-pub fn get_edge_paths(image: &Image, x_range: Range<u32>, y_range: Range<u32>) -> Vec<Vec<Coords>> {
-    let mut checked_pixels: Vec<Coords> = vec![];
+pub fn get_edge_paths(image: &mut Image, x_range: Range<u32>, y_range: Range<u32>) -> Vec<Vec<Coords>> {
     let mut paths: Vec<Vec<Coords>> = vec![];
 
     for y in y_range {
@@ -159,17 +172,15 @@ pub fn get_edge_paths(image: &Image, x_range: Range<u32>, y_range: Range<u32>) -
         for x in x_range.clone() {
             let coords = (x, y);
 
-            if checked_pixels.contains(&coords) {
+            if image.pixel_is_checked(coords) {
                 continue;
             }
 
-            checked_pixels.push(coords);
+            image.set_pixel_is_checked(coords, true);
 
             if is_edge_pixel(image, coords) {
-                let mut path = get_edge_path(image, coords);
+                let path = get_edge_path(image, coords);
                 paths.push(path.clone());
-
-                checked_pixels.append(&mut path);
             }
         }
 
@@ -182,12 +193,15 @@ pub fn get_edge_paths(image: &Image, x_range: Range<u32>, y_range: Range<u32>) -
 }
 
 fn main() {
-    let image = read_png("input.png");
+    let mut image = read_png("input/input.png");
+
+    let width = image.width;
+    let height = image.height;
 
     println!("Finding paths...");
 
     println!(
         "{}",
-        get_edge_paths(&image, 0..image.width, 0..image.height).len()
+        get_edge_paths(&mut image, 0..width, 0..height).len()
     )
 }
