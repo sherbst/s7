@@ -154,8 +154,6 @@ pub fn get_edge_paths(image: &Image, x_range: Range<u32>, y_range: Range<u32>) -
     let mut paths: Vec<Vec<Coords>> = vec![];
 
     for y in y_range {
-        println!("Scanning row {}", y);
-
         for x in x_range.clone() {
             let coords = (x, y);
 
@@ -173,7 +171,7 @@ pub fn get_edge_paths(image: &Image, x_range: Range<u32>, y_range: Range<u32>) -
             }
         }
 
-        if y == 30 {
+        if y == 100 {
             break;
         }
     }
@@ -182,7 +180,7 @@ pub fn get_edge_paths(image: &Image, x_range: Range<u32>, y_range: Range<u32>) -
 }
 
 fn main() {
-    let image = read_png("input.png");
+    let image = read_png("input/input.png");
 
     println!("Finding paths...");
 
