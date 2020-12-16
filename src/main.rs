@@ -31,14 +31,13 @@ impl Image {
 
     fn pixel_is_checked(&self, coords: Coords) -> bool {
         let pixel = self.get_pixel(coords);
+
         pixel.4
     }
 
     fn set_pixel_is_checked(&mut self, coords: Coords, is_checked: bool) {
         let (x, y) = coords;
-        let pixel = self.pixels
-            .get_mut((x + y * self.height) as usize)
-            .unwrap();
+        let pixel = self.pixels.get_mut((x + y * self.height) as usize).unwrap();
 
         pixel.4 = is_checked;
     }
@@ -67,7 +66,7 @@ fn compare_pixels(image: &Image, a_coords: Coords, b_coords: Coords) -> bool {
     let a = image.get_pixel(a_coords);
     let b = image.get_pixel(b_coords);
 
-    a == b
+    a.1 == b.1 && a.2 == b.2 && a.3 == b.3
 }
 
 fn has_unique_neighbors(image: &Image, coords: Coords) -> bool {
@@ -112,8 +111,8 @@ fn is_edge_pixel(image: &Image, coords: Coords) -> bool {
 fn get_next_pixel_coords(image: &Image, coords: Coords, path: &Vec<Coords>) -> Option<Coords> {
     let (pix_x, pix_y) = coords;
 
-    for x in -1..2 {
-        for y in -1..2 {
+    for y in -1..2 {
+        for x in -1..2 {
             if x == 0 && y == 0 {
                 continue;
             }
@@ -163,10 +162,16 @@ fn get_edge_path(image: &mut Image, start_coords: Coords) -> Vec<Coords> {
     }
 }
 
-pub fn get_edge_paths(image: &mut Image, x_range: Range<u32>, y_range: Range<u32>) -> Vec<Vec<Coords>> {
+pub fn get_edge_paths(
+    image: &mut Image,
+    x_range: Range<u32>,
+    y_range: Range<u32>,
+) -> Vec<Vec<Coords>> {
     let mut paths: Vec<Vec<Coords>> = vec![];
 
     for y in y_range {
+        println!("Scanning row {}", y);
+
         for x in x_range.clone() {
             let coords = (x, y);
 
@@ -178,12 +183,9 @@ pub fn get_edge_paths(image: &mut Image, x_range: Range<u32>, y_range: Range<u32
 
             if is_edge_pixel(image, coords) {
                 let path = get_edge_path(image, coords);
+                println!("Path {:?}, len={}", path[path.len() - 1], path.len());
                 paths.push(path.clone());
             }
-        }
-
-        if y == 100 {
-            break;
         }
     }
 
@@ -198,8 +200,5 @@ fn main() {
 
     println!("Finding paths...");
 
-    println!(
-        "{}",
-        get_edge_paths(&mut image, 0..width, 0..height).len()
-    )
+    println!("{}", get_edge_paths(&mut image, 0..width, 0..height).len())
 }
