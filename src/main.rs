@@ -170,10 +170,6 @@ pub fn get_edge_paths(image: &Image, x_range: Range<u32>, y_range: Range<u32>) -
                 checked_pixels.append(&mut path);
             }
         }
-
-        if y == 100 {
-            break;
-        }
     }
 
     paths
