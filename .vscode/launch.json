@@ -9,12 +9,7 @@
       "request": "launch",
       "name": "Debug unit tests in library 'rust-remote-desktop'",
       "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--lib",
-          "--package=rust-remote-desktop"
-        ],
+        "args": ["test", "--no-run", "--lib", "--package=rust-remote-desktop"],
         "filter": {
           "name": "rust-remote-desktop",
           "kind": "lib"
@@ -38,7 +33,7 @@
           "kind": "bin"
         }
       },
-      "args": [],
+      "args": ["${workspaceFolder}/input/input.png"],
       "cwd": "${workspaceFolder}"
     },
     {
