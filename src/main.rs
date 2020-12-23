@@ -1,4 +1,6 @@
+use image::{Rgba, RgbaImage};
 use log::{debug, info, trace};
+use std::env;
 use std::fs::File;
 use std::io::BufWriter;
 use std::ops::Range;
@@ -263,13 +265,30 @@ fn write_output_image(image: &Image, paths: &Vec<Vec<Coords>>) {
     let mut input_image = image.bytes.clone();
 
     for path in paths {
-        for (x, y) in path {
-            let byte_index = (x + y * image.width) * 4;
+        for (pix_x, pix_y) in path {
+            for y in -1..2 {
+                for x in -1..2 {
+                    let paint_x = pix_x.clone() as i32 + x;
+                    let paint_y = pix_y.clone() as i32 + y;
 
-            input_image[byte_index as usize] = 255;
-            input_image[(byte_index + 1) as usize] = 0;
-            input_image[(byte_index + 2) as usize] = 0;
-            input_image[(byte_index + 3) as usize] = 255;
+                    if paint_x < 0 || paint_y < 0 {
+                        continue;
+                    }
+
+                    let paint_coords = (paint_x as u32, paint_y as u32);
+
+                    if !image.is_valid_coords(paint_coords) {
+                        continue;
+                    }
+
+                    let byte_index = ((paint_x + paint_y * image.width as i32) * 4) as usize;
+
+                    input_image[byte_index] = 255;
+                    input_image[byte_index + 1] = 0;
+                    input_image[byte_index + 2] = 0;
+                    input_image[byte_index + 3] = 255;
+                }
+            }
         }
     }
 
@@ -285,8 +304,51 @@ fn write_output_image(image: &Image, paths: &Vec<Vec<Coords>>) {
     png_writer.write_image_data(&input_image[..]).unwrap();
 }
 
+fn write_path_images(image: &Image, paths: &Vec<Vec<Coords>>) {
+    for (path_index, path) in paths.iter().enumerate() {
+        let mut buf = image.bytes.clone();
+
+        for (index, (ax, ay)) in path.iter().enumerate() {
+            if index + 1 == path.len() {
+                break;
+            }
+
+            let (bx, by) = path[index + 1];
+
+            let a_coords = (ax.clone() as f32, ay.clone() as f32);
+            let b_coords = (bx as f32, by as f32);
+
+            let mut img = RgbaImage::from_raw(image.width, image.height, buf).unwrap();
+            imageproc::drawing::draw_line_segment_mut(
+                &mut img,
+                a_coords,
+                b_coords,
+                Rgba([255, 0, 0, 255]),
+            );
+
+            buf = img.to_vec();
+        }
+
+        let mut path_str = "output/paths/".to_owned();
+        path_str.push_str(&path_index.to_string()[..]);
+        path_str.push_str(".png");
+
+        let path = Path::new(&path_str[..]);
+        let file = File::create(path).unwrap();
+        let buf_writer = BufWriter::new(file);
+
+        let mut encoder = png::Encoder::new(buf_writer, image.width, image.height);
+        encoder.set_color(png::ColorType::RGBA);
+        encoder.set_depth(png::BitDepth::Eight);
+
+        let mut png_writer = encoder.write_header().unwrap();
+        png_writer.write_image_data(&buf[..]).unwrap();
+    }
+}
+
 fn main() {
-    pretty_env_logger::init(); // RUST_LOG=debug, for example
+    dotenv::dotenv().unwrap();
+    pretty_env_logger::init_custom_env("DEBUG_LOG_LEVEL"); // DEBUG_LOG_LEVEL=debug, for example
 
     let args: Vec<String> = std::env::args().collect();
 
@@ -301,9 +363,13 @@ fn main() {
 
     let paths = get_edge_paths(&mut image, 0..width, 0..height, None);
 
-    info!("Writing output image...");
+    info!("Writing output images...");
 
     write_output_image(&image, &paths);
+
+    if env::var("DEBUG_PATH_IMAGES").unwrap() == "true" {
+        write_path_images(&image, &paths);
+    }
 
     let path_count = paths.len();
     let point_count = paths.iter().fold(0, |acc, points| acc + points.len());

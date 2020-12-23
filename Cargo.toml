@@ -10,6 +10,9 @@ edition = "2018"
 png = "0.16.8"
 log = "0.4.11"
 pretty_env_logger = "0.4.0"
+dotenv = "0.15.0"
+imageproc = "0.22.0"
+image = "0.23.12"
 
 [dev-dependencies]
 criterion = "0.3"
