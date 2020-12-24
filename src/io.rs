@@ -37,7 +37,7 @@ enum S4PathType {
 impl From<S4PathType> for u8 {
     fn from(path_type: S4PathType) -> Self {
         match path_type {
-            S4PathType::Path => 1,
+            S4PathType::Path => 0x50, // 'P'
         }
     }
 }
