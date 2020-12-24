@@ -1,382 +1,47 @@
-use image::{Rgba, RgbaImage};
-use log::{debug, info, trace};
-use std::env;
-use std::fs::File;
-use std::io::BufWriter;
-use std::ops::Range;
-use std::path::Path;
-
-type Coords = (u32, u32);
-type Pixel = (u8, u8, u8, u8, bool);
-
-const RGB_DIFFERENCE: u8 = 3;
-
-pub struct Image {
-    bytes: Vec<u8>,
-    pixels: Vec<Pixel>,
-    pub width: u32,
-    pub height: u32,
-}
-
-impl Image {
-    fn new(bytes: Vec<u8>, pixels: Vec<Pixel>, width: u32, height: u32) -> Self {
-        return Self {
-            bytes,
-            pixels,
-            width,
-            height,
-        };
-    }
-
-    fn get_pixel_index(&self, coords: Coords) -> usize {
-        let (x, y) = coords;
-        (x + y * self.width) as usize
-    }
-
-    fn get_pixel(&self, coords: Coords) -> Pixel {
-        self.pixels[self.get_pixel_index(coords)]
-    }
-
-    fn is_valid_coords(&self, coords: Coords) -> bool {
-        let (x, y) = coords;
-        x < self.width && y < self.height
-    }
-
-    fn pixel_is_checked(&self, coords: Coords) -> bool {
-        let pixel = self.get_pixel(coords);
-
-        pixel.4
-    }
-
-    fn set_pixel_is_checked(&mut self, coords: Coords, is_checked: bool) {
-        let index = self.get_pixel_index(coords);
-        let pixel = self.pixels.get_mut(index).unwrap();
-
-        pixel.4 = is_checked;
-    }
-}
-
-pub fn read_png(path: &str) -> Image {
-    let in_file = File::open(path).unwrap();
-
-    let mut decoder = png::Decoder::new(in_file);
-    decoder.set_transformations(png::Transformations::EXPAND);
-
-    let (info, mut reader) = decoder.read_info().unwrap();
-
-    let mut buf = vec![0; info.buffer_size()];
-    reader.next_frame(&mut buf).unwrap();
-
-    let pixels = buf
-        .chunks(4)
-        .map(|x| (x[0], x[1], x[2], x[3], false))
-        .collect();
-
-    return Image::new(buf, pixels, info.width, info.height);
-}
-
-fn compare_pixels(image: &Image, a_coords: Coords, b_coords: Coords) -> bool {
-    let a = image.get_pixel(a_coords);
-    let b = image.get_pixel(b_coords);
-
-    let a_avg = (a.0 as u32 + a.1 as u32 + a.2 as u32) / 3;
-    let b_avg = (b.0 as u32 + b.1 as u32 + b.2 as u32) / 3;
-
-    let diff = (a_avg as i16 - b_avg as i16).abs() as u8;
-    diff <= RGB_DIFFERENCE
-}
-
-fn has_unique_neighbors(image: &Image, coords: Coords) -> bool {
-    let (pix_x, pix_y) = coords;
-
-    for x in -1..2 {
-        for y in -1..2 {
-            if x == 0 && y == 0 {
-                continue;
-            }
-
-            let neighbor_x = pix_x as i32 + x;
-            let neighbor_y = pix_y as i32 + y;
-
-            if neighbor_x < 0 || neighbor_y < 0 {
-                continue;
-            }
-
-            let neighbor_coords = (neighbor_x as u32, neighbor_y as u32);
-
-            if !compare_pixels(image, neighbor_coords, coords) {
-                return true;
-            }
-        }
-    }
-
-    false
-}
-
-fn is_edge_pixel(image: &Image, coords: Coords) -> bool {
-    let (x, y) = coords;
-
-    if x == 0 || x == image.width - 1 || y == 0 || y == image.height - 1 {
-        true
-    } else if has_unique_neighbors(image, coords) {
-        true
-    } else {
-        false
-    }
-}
-
-fn get_next_pixel_coords(image: &Image, coords: Coords) -> Option<Coords> {
-    let (pix_x, pix_y) = coords;
-
-    for y in -1..2 {
-        for x in -1..2 {
-            if x == 0 && y == 0 {
-                continue;
-            }
-
-            let neighbor_x = pix_x as i32 + x;
-            let neighbor_y = pix_y as i32 + y;
-
-            if neighbor_x < 0 || neighbor_y < 0 {
-                continue;
-            }
-
-            let neighbor_coords = (neighbor_x as u32, neighbor_y as u32);
-
-            if !image.is_valid_coords(neighbor_coords) {
-                continue;
-            }
-
-            if image.pixel_is_checked(neighbor_coords) {
-                continue;
-            }
-
-            if !is_edge_pixel(image, neighbor_coords) {
-                continue;
-            }
-
-            if compare_pixels(image, coords, neighbor_coords) {
-                return Some(neighbor_coords);
-            }
-        }
-    }
-
-    None
-}
-
-fn get_edge_path(image: &mut Image, start_coords: Coords) -> (Vec<Coords>, (Coords, Coords)) {
-    let mut min_x = 0u32;
-    let mut min_y = 0u32;
-    let mut max_x = 0u32;
-    let mut max_y = 0u32;
-
-    let mut last_coords = start_coords;
-    let mut cur_coords = start_coords;
-
-    let mut path = vec![start_coords];
-
-    loop {
-        let next_coords = match get_next_pixel_coords(image, cur_coords) {
-            Some(coords) => coords,
-            None => {
-                path.push(cur_coords);
-
-                min_x = min_x.min(cur_coords.0);
-                min_y = min_y.min(cur_coords.1);
-                max_x = max_x.max(cur_coords.0);
-                max_y = max_y.max(cur_coords.1);
-
-                let bounds = ((min_x, max_y), (max_x, min_y));
-
-                return (path, bounds);
-            }
-        };
-
-        image.set_pixel_is_checked(next_coords, true);
-
-        if !(cur_coords.0 == last_coords.0 && cur_coords.0 == next_coords.0)
-            && !(cur_coords.1 == last_coords.1 && cur_coords.1 == next_coords.1)
-        {
-            path.push(cur_coords);
-
-            min_x = min_x.min(cur_coords.0);
-            min_y = min_y.min(cur_coords.1);
-            max_x = max_x.max(cur_coords.0);
-            max_y = max_y.max(cur_coords.1);
-        }
-
-        last_coords = cur_coords;
-        cur_coords = next_coords;
-    }
-}
-
-pub fn get_edge_paths(
-    image: &mut Image,
-    x_range: Range<u32>,
-    y_range: Range<u32>,
-    ignore_color_pix: Option<Coords>,
-) -> Vec<Vec<Coords>> {
-    let mut paths: Vec<Vec<Coords>> = vec![];
-
-    for y in y_range {
-        debug!("Scanning row {}", y);
-
-        for x in x_range.clone() {
-            let coords = (x, y);
-
-            if image.pixel_is_checked(coords) {
-                continue;
-            }
-
-            image.set_pixel_is_checked(coords, true);
-
-            if is_edge_pixel(image, coords) {
-                match ignore_color_pix {
-                    Some(cmp_coords) => {
-                        if compare_pixels(image, coords, cmp_coords) {
-                            continue;
-                        }
-                    }
-                    None => (),
-                }
-
-                let (path, bounds) = get_edge_path(image, coords);
-                paths.push(path.clone());
-
-                let ((min_x, max_y), (max_x, min_y)) = bounds;
-                let mut interior_paths =
-                    get_edge_paths(image, min_x..max_x, min_y..max_y, Some(coords));
-                paths.append(&mut interior_paths);
-
-                trace!(
-                    "Row: {}, Path {:?}, len={}",
-                    y,
-                    path[path.len() - 1],
-                    path.len()
-                );
-            }
-        }
-    }
-
-    paths
-}
-
-fn write_output_image(image: &Image, paths: &Vec<Vec<Coords>>) {
-    let mut input_image = image.bytes.clone();
-
-    for path in paths {
-        for (pix_x, pix_y) in path {
-            for y in -1..2 {
-                for x in -1..2 {
-                    let paint_x = pix_x.clone() as i32 + x;
-                    let paint_y = pix_y.clone() as i32 + y;
-
-                    if paint_x < 0 || paint_y < 0 {
-                        continue;
-                    }
-
-                    let paint_coords = (paint_x as u32, paint_y as u32);
-
-                    if !image.is_valid_coords(paint_coords) {
-                        continue;
-                    }
-
-                    let byte_index = ((paint_x + paint_y * image.width as i32) * 4) as usize;
-
-                    input_image[byte_index] = 255;
-                    input_image[byte_index + 1] = 0;
-                    input_image[byte_index + 2] = 0;
-                    input_image[byte_index + 3] = 255;
-                }
-            }
-        }
-    }
-
-    let path = Path::new("output/output.png");
-    let file = File::create(path).unwrap();
-    let buf_writer = BufWriter::new(file);
-
-    let mut encoder = png::Encoder::new(buf_writer, image.width, image.height);
-    encoder.set_color(png::ColorType::RGBA);
-    encoder.set_depth(png::BitDepth::Eight);
-
-    let mut png_writer = encoder.write_header().unwrap();
-    png_writer.write_image_data(&input_image[..]).unwrap();
-}
-
-fn write_path_images(image: &Image, paths: &Vec<Vec<Coords>>) {
-    for (path_index, path) in paths.iter().enumerate() {
-        let mut buf = image.bytes.clone();
-
-        for (index, (ax, ay)) in path.iter().enumerate() {
-            if index + 1 == path.len() {
-                break;
-            }
-
-            let (bx, by) = path[index + 1];
-
-            let a_coords = (ax.clone() as f32, ay.clone() as f32);
-            let b_coords = (bx as f32, by as f32);
-
-            let mut img = RgbaImage::from_raw(image.width, image.height, buf).unwrap();
-            imageproc::drawing::draw_line_segment_mut(
-                &mut img,
-                a_coords,
-                b_coords,
-                Rgba([255, 0, 0, 255]),
-            );
-
-            buf = img.to_vec();
-        }
-
-        let mut path_str = "output/paths/".to_owned();
-        path_str.push_str(&path_index.to_string()[..]);
-        path_str.push_str(".png");
-
-        let path = Path::new(&path_str[..]);
-        let file = File::create(path).unwrap();
-        let buf_writer = BufWriter::new(file);
-
-        let mut encoder = png::Encoder::new(buf_writer, image.width, image.height);
-        encoder.set_color(png::ColorType::RGBA);
-        encoder.set_depth(png::BitDepth::Eight);
-
-        let mut png_writer = encoder.write_header().unwrap();
-        png_writer.write_image_data(&buf[..]).unwrap();
-    }
-}
+mod decode;
+mod encode;
+mod image;
+mod io;
+
+use encode::encode;
+use io::{read_png, write_s4};
 
 fn main() {
-    dotenv::dotenv().unwrap();
-    pretty_env_logger::init_custom_env("DEBUG_LOG_LEVEL"); // DEBUG_LOG_LEVEL=debug, for example
+    dotenv::dotenv().unwrap(); // Load .env file
+    pretty_env_logger::init_custom_env("DEBUG_LOG_LEVEL");
 
-    let args: Vec<String> = std::env::args().collect();
+    let encode_subcommand = clap::SubCommand::with_name("encode")
+        .about("Encodes input PNG to output S4 file")
+        .arg(
+            clap::Arg::with_name("INPUT")
+                .help("Sets the path of the input file")
+                .required(true)
+                .index(1),
+        )
+        .arg(
+            clap::Arg::with_name("OUTPUT")
+                .help("Sets the path of the output file")
+                .required(true)
+                .index(2),
+        );
 
-    info!("Reading input image...");
+    let args = clap::App::new("S4 Screenshot Serialization")
+        .version("0.1.0")
+        .author("Sawyer Herbst <contact@sawyerherbst.com>")
+        .about("Serializes screenshots to and from .s4 files")
+        .subcommand(encode_subcommand)
+        .get_matches();
 
-    let mut image = read_png(&args[1]);
+    match args.subcommand_name().unwrap() {
+        "encode" => {
+            let encode_args = args.subcommand_matches("encode").unwrap();
 
-    let width = image.width;
-    let height = image.height;
+            let input = read_png(encode_args.value_of("INPUT").unwrap());
+            let paths = encode(input);
 
-    info!("Finding paths...");
-
-    let paths = get_edge_paths(&mut image, 0..width, 0..height, None);
-
-    info!("Writing output images...");
-
-    write_output_image(&image, &paths);
-
-    if env::var("DEBUG_PATH_IMAGES").unwrap() == "true" {
-        write_path_images(&image, &paths);
-    }
-
-    let path_count = paths.len();
-    let point_count = paths.iter().fold(0, |acc, points| acc + points.len());
-
-    info!("Found {} paths, with {} points", path_count, point_count);
-    info!(
-        "Total file size would be {} KB",
-        (path_count * 7 + point_count * 4) as f64 / 1000f64
-    );
+            write_s4(encode_args.value_of("OUTPUT").unwrap(), paths);
+        }
+        "decode" => unimplemented!(),
+        _ => (),
+    };
 }
