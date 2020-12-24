@@ -1,14 +1,12 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use rust_remote_desktop::main::{get_edge_paths, read_png};
+use s7::algorithm::encode::encode;
+use s7::read_png::read_png;
 
 fn benchmark(c: &mut Criterion) {
-    let mut image = read_png("input/input.png");
-
-    let width = image.width;
-    let height = image.height;
+    let image = read_png("input/input.png");
 
     c.bench_function("get edge paths", |b| {
-        b.iter(|| get_edge_paths(&mut image, 0..width, 0..height))
+        b.iter_with_setup(|| image.clone(), |img| encode(img))
     });
 }
 

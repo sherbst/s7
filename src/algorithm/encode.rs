@@ -1,6 +1,8 @@
-use super::image::{Coords, Image};
+use crate::entity::{DataChunk, Entity, HeaderChunk, Object, PathObject};
+use crate::image::{Coords, Image};
 use log::{debug, trace};
 use std::ops::Range;
+use std::time::SystemTime;
 
 const RGB_DIFFERENCE: u8 = 3;
 
@@ -139,13 +141,13 @@ fn get_edge_path(image: &mut Image, start_coords: Coords) -> (Vec<Coords>, (Coor
     }
 }
 
-pub fn get_edge_paths(
+fn get_edge_paths(
     image: &mut Image,
     x_range: Range<u32>,
     y_range: Range<u32>,
     ignore_color_pix: Option<Coords>,
 ) -> Vec<Vec<Coords>> {
-    let mut paths: Vec<Vec<Coords>> = vec![];
+    let mut paths: Vec<Vec<Coords>> = Vec::new();
 
     for y in y_range {
         debug!("Scanning row {}", y);
@@ -190,9 +192,37 @@ pub fn get_edge_paths(
     paths
 }
 
-pub fn encode(mut image: Image) -> Vec<Vec<Coords>> {
+pub fn encode(mut image: Image) -> Entity {
     let width = image.width.clone();
     let height = image.height.clone();
 
-    get_edge_paths(&mut image, 0..width, 0..height, None)
+    let paths = get_edge_paths(&mut image, 0..width, 0..height, None);
+
+    let mut objects: Vec<Object> = Vec::new();
+    for path in paths {
+        let mut points: Vec<[u16; 2]> = Vec::new();
+
+        for (x, y) in path {
+            points.push([x as u16, y as u16]);
+        }
+
+        objects.push(Object::Path(PathObject {
+            color: [255, 0, 0],
+            points,
+        }))
+    }
+
+    let data_chunk = DataChunk { objects };
+
+    let header_chunk = HeaderChunk {
+        creation_date: Some(SystemTime::now()),
+        other_attributes: Vec::new(),
+    };
+
+    Entity {
+        version: "1.0.0".to_owned(),
+        data_chunks: vec![data_chunk],
+        header_chunk,
+        other_chunks: Vec::new(),
+    }
 }

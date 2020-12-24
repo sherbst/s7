@@ -1,6 +1,7 @@
 pub type Coords = (u32, u32);
 pub type Pixel = (u8, u8, u8, u8, bool);
 
+#[derive(Clone)]
 pub struct Image {
     bytes: Vec<u8>,
     pixels: Vec<Pixel>,

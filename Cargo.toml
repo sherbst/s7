@@ -1,5 +1,5 @@
 [package]
-name = "screenshot-serialization"
+name = "s7"
 version = "0.1.0"
 authors = ["Sawyer Herbst <sawyer.herbst@myparadigm.com>"]
 edition = "2018"
