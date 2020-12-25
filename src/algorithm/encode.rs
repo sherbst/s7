@@ -17,7 +17,7 @@ fn compare_pixels(image: &Image, a_coords: Coords, b_coords: Coords) -> bool {
 }
 
 fn has_unique_neighbors(image: &Image, coords: Coords) -> bool {
-    let (pix_x, pix_y) = coords;
+    let [pix_x, pix_y] = coords;
 
     for x in -1..2 {
         for y in -1..2 {
@@ -32,7 +32,7 @@ fn has_unique_neighbors(image: &Image, coords: Coords) -> bool {
                 continue;
             }
 
-            let neighbor_coords = (neighbor_x as u32, neighbor_y as u32);
+            let neighbor_coords = [neighbor_x as u16, neighbor_y as u16];
 
             if !compare_pixels(image, neighbor_coords, coords) {
                 return true;
@@ -44,7 +44,7 @@ fn has_unique_neighbors(image: &Image, coords: Coords) -> bool {
 }
 
 fn is_edge_pixel(image: &Image, coords: Coords) -> bool {
-    let (x, y) = coords;
+    let [x, y] = coords;
 
     if x == 0 || x == image.width - 1 || y == 0 || y == image.height - 1 {
         true
@@ -56,7 +56,7 @@ fn is_edge_pixel(image: &Image, coords: Coords) -> bool {
 }
 
 fn get_next_pixel_coords(image: &Image, coords: Coords) -> Option<Coords> {
-    let (pix_x, pix_y) = coords;
+    let [pix_x, pix_y] = coords;
 
     for y in -1..2 {
         for x in -1..2 {
@@ -71,7 +71,7 @@ fn get_next_pixel_coords(image: &Image, coords: Coords) -> Option<Coords> {
                 continue;
             }
 
-            let neighbor_coords = (neighbor_x as u32, neighbor_y as u32);
+            let neighbor_coords = [neighbor_x as u16, neighbor_y as u16];
 
             if !image.is_valid_coords(neighbor_coords) {
                 continue;
@@ -94,45 +94,51 @@ fn get_next_pixel_coords(image: &Image, coords: Coords) -> Option<Coords> {
     None
 }
 
-fn get_edge_path(image: &mut Image, start_coords: Coords) -> (Vec<Coords>, (Coords, Coords)) {
-    let mut min_x = 0u32;
-    let mut min_y = 0u32;
-    let mut max_x = 0u32;
-    let mut max_y = 0u32;
+fn get_object(image: &mut Image, start_coords: Coords) -> (Object, (Coords, Coords)) {
+    let mut min_x = 0u16;
+    let mut min_y = 0u16;
+    let mut max_x = 0u16;
+    let mut max_y = 0u16;
 
     let mut last_coords = start_coords;
     let mut cur_coords = start_coords;
 
-    let mut path = vec![start_coords];
+    let mut points = vec![start_coords];
 
     loop {
         let next_coords = match get_next_pixel_coords(image, cur_coords) {
             Some(coords) => coords,
             None => {
-                path.push(cur_coords);
+                points.push(cur_coords);
 
-                min_x = min_x.min(cur_coords.0);
-                min_y = min_y.min(cur_coords.1);
-                max_x = max_x.max(cur_coords.0);
-                max_y = max_y.max(cur_coords.1);
+                min_x = min_x.min(cur_coords[0]);
+                min_y = min_y.min(cur_coords[1]);
+                max_x = max_x.max(cur_coords[0]);
+                max_y = max_y.max(cur_coords[1]);
 
-                let bounds = ((min_x, max_y), (max_x, min_y));
+                let bounds = ([min_x, max_y], [max_x, min_y]);
 
-                return (path, bounds);
+                return (
+                    Object::Path(PathObject {
+                        color: [255, 0, 0],
+                        points,
+                    }),
+                    bounds,
+                );
             }
         };
 
         image.set_pixel_is_checked(next_coords, true);
 
-        if !(cur_coords.0 == last_coords.0 && cur_coords.0 == next_coords.0)
-            && !(cur_coords.1 == last_coords.1 && cur_coords.1 == next_coords.1)
+        if !(cur_coords[0] == last_coords[0] && cur_coords[0] == next_coords[0])
+            && !(cur_coords[1] == last_coords[1] && cur_coords[1] == next_coords[1])
         {
-            path.push(cur_coords);
+            points.push(cur_coords);
 
-            min_x = min_x.min(cur_coords.0);
-            min_y = min_y.min(cur_coords.1);
-            max_x = max_x.max(cur_coords.0);
-            max_y = max_y.max(cur_coords.1);
+            min_x = min_x.min(cur_coords[0]);
+            min_y = min_y.min(cur_coords[1]);
+            max_x = max_x.max(cur_coords[0]);
+            max_y = max_y.max(cur_coords[1]);
         }
 
         last_coords = cur_coords;
@@ -140,17 +146,17 @@ fn get_edge_path(image: &mut Image, start_coords: Coords) -> (Vec<Coords>, (Coor
     }
 }
 
-fn get_edge_paths(
+fn get_objects(
     image: &mut Image,
-    x_range: Range<u32>,
-    y_range: Range<u32>,
+    x_range: Range<u16>,
+    y_range: Range<u16>,
     ignore_color_pix: Option<Coords>,
-) -> Vec<Vec<Coords>> {
-    let mut paths: Vec<Vec<Coords>> = Vec::new();
+) -> Vec<Object> {
+    let mut objects: Vec<Object> = Vec::new();
 
     for y in y_range {
         for x in x_range.clone() {
-            let coords = (x, y);
+            let coords = [x, y];
 
             if image.pixel_is_checked(coords) {
                 continue;
@@ -168,39 +174,25 @@ fn get_edge_paths(
                     None => (),
                 }
 
-                let (path, bounds) = get_edge_path(image, coords);
-                paths.push(path.clone());
+                let (object, bounds) = get_object(image, coords);
+                objects.push(object);
 
-                let ((min_x, max_y), (max_x, min_y)) = bounds;
+                let ([min_x, max_y], [max_x, min_y]) = bounds;
                 let mut interior_paths =
-                    get_edge_paths(image, min_x..max_x, min_y..max_y, Some(coords));
-                paths.append(&mut interior_paths);
+                    get_objects(image, min_x..max_x, min_y..max_y, Some(coords));
+                objects.append(&mut interior_paths);
             }
         }
     }
 
-    paths
+    objects
 }
 
 pub fn encode(mut image: Image) -> Entity {
     let width = image.width.clone();
     let height = image.height.clone();
 
-    let paths = get_edge_paths(&mut image, 0..width, 0..height, None);
-
-    let mut objects: Vec<Object> = Vec::new();
-    for path in paths {
-        let mut points: Vec<[u16; 2]> = Vec::new();
-
-        for (x, y) in path {
-            points.push([x as u16, y as u16]);
-        }
-
-        objects.push(Object::Path(PathObject {
-            color: [255, 0, 0],
-            points,
-        }))
-    }
+    let objects = get_objects(&mut image, 0..width, 0..height, None);
 
     let data_chunk = DataChunk { objects };
 

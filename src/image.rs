@@ -1,16 +1,16 @@
-pub type Coords = (u32, u32);
+pub type Coords = [u16; 2];
 pub type Pixel = (u8, u8, u8, u8, bool);
 
 #[derive(Clone)]
 pub struct Image {
     bytes: Vec<u8>,
     pixels: Vec<Pixel>,
-    pub width: u32,
-    pub height: u32,
+    pub width: u16,
+    pub height: u16,
 }
 
 impl Image {
-    pub fn new(bytes: Vec<u8>, pixels: Vec<Pixel>, width: u32, height: u32) -> Self {
+    pub fn new(bytes: Vec<u8>, pixels: Vec<Pixel>, width: u16, height: u16) -> Self {
         return Self {
             bytes,
             pixels,
@@ -20,7 +20,7 @@ impl Image {
     }
 
     pub fn get_pixel_index(&self, coords: Coords) -> usize {
-        let (x, y) = coords;
+        let [x, y] = coords;
         (x + y * self.width) as usize
     }
 
@@ -29,7 +29,7 @@ impl Image {
     }
 
     pub fn is_valid_coords(&self, coords: Coords) -> bool {
-        let (x, y) = coords;
+        let [x, y] = coords;
         x < self.width && y < self.height
     }
 

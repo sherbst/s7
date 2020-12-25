@@ -17,5 +17,5 @@ pub fn read_png(path: &str) -> Image {
         .map(|x| (x[0], x[1], x[2], x[3], false))
         .collect();
 
-    return Image::new(buf, pixels, info.width, info.height);
+    return Image::new(buf, pixels, info.width as u16, info.height as u16);
 }

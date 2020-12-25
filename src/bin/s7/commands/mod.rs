@@ -4,7 +4,6 @@ mod encode;
 use crate::cli_error::CliError;
 use clap::{App, AppSettings, Arg};
 use simplelog::{ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
-use std::borrow::Cow;
 
 pub fn definition<'a>() -> App<'a, 'a> {
     let subcommands = vec![decode::definition(), encode::definition()];
