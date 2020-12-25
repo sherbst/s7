@@ -3,7 +3,7 @@ pub type Pixel = (u8, u8, u8, u8, bool);
 
 #[derive(Clone)]
 pub struct Image {
-    bytes: Vec<u8>,
+    pub bytes: Vec<u8>,
     pixels: Vec<Pixel>,
     pub width: u16,
     pub height: u16,

@@ -100,7 +100,9 @@ pub fn write(out_path: &str, entity: Entity) {
     write_chunk(&mut file, "FEND", Vec::new());
 
     // Overwrite file size
+    let file_size = file.metadata().unwrap().len();
     file.seek(SeekFrom::Start(26)).unwrap();
-    file.write_all(&file.metadata().unwrap().len().to_be_bytes()[..])
-        .unwrap();
+    file.write_all(&file_size.to_be_bytes()[..]).unwrap();
+
+    log::debug!("Output file has size of {} bytes", file_size);
 }

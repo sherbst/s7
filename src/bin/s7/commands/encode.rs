@@ -30,6 +30,7 @@ pub fn exec(matches: &ArgMatches) -> Result<(), CliError> {
 
     let input_img = read_png(input_path);
 
+    log::debug!("Input file has size of {} bytes", input_img.bytes.len());
     log::info!("Encoding image...");
 
     let entity = encode(input_img);
