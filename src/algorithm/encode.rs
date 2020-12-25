@@ -1,6 +1,5 @@
 use crate::entity::{DataChunk, Entity, HeaderChunk, Object, PathObject};
 use crate::image::{Coords, Image};
-use log::{debug, trace};
 use std::ops::Range;
 use std::time::SystemTime;
 
@@ -150,8 +149,6 @@ fn get_edge_paths(
     let mut paths: Vec<Vec<Coords>> = Vec::new();
 
     for y in y_range {
-        debug!("Scanning row {}", y);
-
         for x in x_range.clone() {
             let coords = (x, y);
 
@@ -178,13 +175,6 @@ fn get_edge_paths(
                 let mut interior_paths =
                     get_edge_paths(image, min_x..max_x, min_y..max_y, Some(coords));
                 paths.append(&mut interior_paths);
-
-                trace!(
-                    "Row: {}, Path {:?}, len={}",
-                    y,
-                    path[path.len() - 1],
-                    path.len()
-                );
             }
         }
     }

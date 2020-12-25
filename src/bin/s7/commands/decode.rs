@@ -6,5 +6,5 @@ pub fn definition<'a>() -> App<'a, 'a> {
 }
 
 pub fn exec(matches: &ArgMatches) -> Result<(), CliError> {
-    Ok(())
+    unimplemented!()
 }

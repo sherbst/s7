@@ -25,10 +25,20 @@ pub fn exec(matches: &ArgMatches) -> Result<(), CliError> {
     let input_path = matches.value_of("INPUT").unwrap();
     let output_path = matches.value_of("OUTPUT").unwrap();
 
+    log::info!("Encoding image at {} into {}", input_path, output_path);
+    log::info!("Reading input image...");
+
     let input_img = read_png(input_path);
+
+    log::info!("Encoding image...");
+
     let entity = encode(input_img);
 
+    log::info!("Writing output image...");
+
     write(output_path, entity);
+
+    log::info!("Saved output S4 file to {}", output_path);
 
     Ok(())
 }
