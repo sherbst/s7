@@ -117,10 +117,11 @@ fn get_object(image: &mut Image, start_coords: Coords) -> (Object, (Coords, Coor
                 max_y = max_y.max(cur_coords[1]);
 
                 let bounds = ([min_x, max_y], [max_x, min_y]);
+                let start_pixel = image.get_pixel(start_coords);
 
                 return (
                     Object::Path(PathObject {
-                        color: [255, 0, 0],
+                        color: [start_pixel.0, start_pixel.1, start_pixel.2],
                         points,
                     }),
                     bounds,
