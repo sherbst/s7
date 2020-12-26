@@ -17,10 +17,20 @@ fn write_chunk(file: &mut File, code: &str, data: Vec<u8>) {
 }
 
 fn write_header_chunk(file: &mut File, header: HeaderChunk) {
-    let mut all_attributes = vec![HeaderAttibute {
-        key: "SIZE".to_owned(),
-        val: 0u64.to_be_bytes().to_vec(),
-    }];
+    let mut all_attributes = vec![
+        HeaderAttibute {
+            key: "SIZE".to_owned(),
+            val: 0u64.to_be_bytes().to_vec(),
+        },
+        HeaderAttibute {
+            key: "WIDT".to_owned(),
+            val: header.width.to_be_bytes().to_vec(),
+        },
+        HeaderAttibute {
+            key: "HEIG".to_owned(),
+            val: header.height.to_be_bytes().to_vec(),
+        },
+    ];
 
     all_attributes.extend_from_slice(header.other_attributes.as_slice());
 

@@ -20,6 +20,8 @@ pub struct HeaderAttibute {
 
 pub struct HeaderChunk {
     pub creation_date: Option<SystemTime>,
+    pub width: u16,
+    pub height: u16,
     pub other_attributes: Vec<HeaderAttibute>,
 }
 

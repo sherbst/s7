@@ -200,6 +200,8 @@ pub fn encode(mut image: Image) -> Entity {
     let header_chunk = HeaderChunk {
         creation_date: Some(SystemTime::now()),
         other_attributes: Vec::new(),
+        width,
+        height,
     };
 
     Entity {
