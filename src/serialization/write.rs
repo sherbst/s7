@@ -85,11 +85,12 @@ pub fn write(out_path: &str, entity: Entity) {
     let mut file = File::create(out_path).unwrap();
 
     // Magic number
-    let magic_bytes = &[&[0x0d], "S4".as_bytes(), &[0x0d]].concat();
+    let magic_bytes = &[&[0x0d], "S7".as_bytes(), &[0x0d]].concat();
     file.write_all(magic_bytes).unwrap();
 
     // Version
     file.write_all(entity.version.as_bytes()).unwrap();
+    file.write_all(&[0]).unwrap();
 
     write_header_chunk(&mut file, entity.header_chunk);
 
