@@ -35,6 +35,7 @@ pub fn exec(matches: &ArgMatches) -> Result<(), CliError> {
 
     let entity = encode(input_img);
 
+    log::debug!("{} objects in entity", entity.data_chunks[0].objects.len());
     log::info!("Writing output image...");
 
     write(output_path, entity);

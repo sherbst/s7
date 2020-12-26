@@ -5,74 +5,20 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Launch encode",
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in library 'rust-remote-desktop'",
-      "cargo": {
-        "args": ["test", "--no-run", "--lib", "--package=rust-remote-desktop"],
-        "filter": {
-          "name": "rust-remote-desktop",
-          "kind": "lib"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
+      "program": "${workspaceRoot}/target/debug/s7",
+      "args": ["encode", "input/input.png", "output/debug.s7"],
+      "cwd": "${workspaceRoot}"
     },
     {
+      "name": "Debug decode",
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'rust-remote-desktop'",
-      "cargo": {
-        "args": [
-          "build",
-          "--bin=rust-remote-desktop",
-          "--package=rust-remote-desktop"
-        ],
-        "filter": {
-          "name": "rust-remote-desktop",
-          "kind": "bin"
-        }
-      },
-      "args": ["${workspaceFolder}/input/input.png"],
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug unit tests in executable 'rust-remote-desktop'",
-      "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--bin=rust-remote-desktop",
-          "--package=rust-remote-desktop"
-        ],
-        "filter": {
-          "name": "rust-remote-desktop",
-          "kind": "bin"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug benchmark 'benchmark'",
-      "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--bench=benchmark",
-          "--package=rust-remote-desktop"
-        ],
-        "filter": {
-          "name": "benchmark",
-          "kind": "bench"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
+      "program": "${workspaceRoot}/target/debug/s7",
+      "args": ["decode", "output/debug.s7", "output/debug.png"],
+      "cwd": "${workspaceRoot}"
     }
   ]
 }

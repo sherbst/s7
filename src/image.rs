@@ -21,7 +21,7 @@ impl Image {
 
     pub fn get_pixel_index(&self, coords: Coords) -> usize {
         let [x, y] = coords;
-        (x + y * self.width) as usize
+        x as usize + y as usize * self.width as usize
     }
 
     pub fn get_pixel(&self, coords: Coords) -> Pixel {
