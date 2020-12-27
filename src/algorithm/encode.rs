@@ -168,9 +168,9 @@ fn get_objects(
             if is_edge_pixel(image, coords) {
                 match ignore_color_pix {
                     Some(cmp_coords) => {
-                        if compare_pixels(image, coords, cmp_coords) {
-                            continue;
-                        }
+                        // if compare_pixels(image, coords, cmp_coords) {
+                        //     continue;
+                        // }
                     }
                     None => (),
                 }
