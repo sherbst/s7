@@ -1,3 +1,4 @@
+mod debug;
 mod decode;
 mod encode;
 
@@ -6,7 +7,12 @@ use clap::{App, AppSettings, Arg};
 use simplelog::{ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
 
 pub fn definition<'a>() -> App<'a, 'a> {
-    let subcommands = vec![decode::definition(), encode::definition()];
+    let subcommands = vec![
+        decode::definition(),
+        encode::definition(),
+        debug::definition(),
+    ];
+
     let mut subcommands_with_args: Vec<App> = Vec::new();
 
     for sub in subcommands {
@@ -56,6 +62,7 @@ pub fn exec() -> Result<(), CliError> {
     let exec_fn = match subcommand_name {
         "decode" => decode::exec,
         "encode" => encode::exec,
+        "debug" => debug::exec,
 
         _ => unreachable!(),
     };
