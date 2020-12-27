@@ -40,7 +40,7 @@ pub fn exec(matches: &ArgMatches) -> Result<(), CliError> {
 
     write(output_path, entity);
 
-    log::info!("Saved output S4 file to {}", output_path);
+    log::info!("Saved output S7 file to {}", output_path);
 
     Ok(())
 }

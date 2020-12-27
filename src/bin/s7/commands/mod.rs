@@ -29,7 +29,7 @@ pub fn definition<'a>() -> App<'a, 'a> {
     App::new("S7 Screenshot Serialization")
         .version("0.1.0")
         .author("Sawyer Herbst <contact@sawyerherbst.com>")
-        .about("Commands for dealing with the S4 file format")
+        .about("Commands for dealing with the S7 file format")
         .setting(AppSettings::ArgRequiredElseHelp)
         .subcommands(subcommands_with_args)
 }
