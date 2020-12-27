@@ -78,10 +78,11 @@ fn write_data_chunk(file: &mut File, chunk: DataChunk) {
                 data.push('P' as u8);
 
                 // Color
-                data.extend_from_slice(&path.color);
+                let color: [u8; 3] = path.color.into();
+                data.extend_from_slice(&color);
 
                 // Points
-                for [x, y] in path.points {
+                for (x, y) in path.points {
                     data.extend_from_slice(&[x.to_be_bytes(), y.to_be_bytes()].concat());
                 }
             }

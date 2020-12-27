@@ -1,3 +1,4 @@
+use super::s7_image::Rgb;
 use std::time::SystemTime;
 
 #[derive(Debug)]
@@ -30,8 +31,8 @@ pub struct HeaderChunk {
 
 #[derive(Debug)]
 pub struct PathObject {
-    pub color: [u8; 3],
-    pub points: Vec<[u16; 2]>,
+    pub color: Rgb,
+    pub points: Vec<(u16, u16)>,
 }
 
 #[derive(Debug)]

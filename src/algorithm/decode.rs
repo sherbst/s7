@@ -24,10 +24,10 @@ pub fn decode(entity: Entity) -> RgbImage {
                         draw_hollow_rect_mut(
                             &mut image,
                             Rect::at(pt.x, pt.y).of_size(1, 1),
-                            Rgb(path.color),
+                            path.color.into(),
                         );
                     } else {
-                        draw_polygon_mut(&mut image, &points, Rgb(path.color));
+                        draw_polygon_mut(&mut image, &points, path.color.into());
                     }
                 }
             }

@@ -113,15 +113,16 @@ fn parse_data_chunk(chunk: Chunk) -> Result<DataChunk, ParseError> {
 
         let object = match obj_type {
             'P' => {
-                let mut color = [0; 3];
-                chunk_reader.read_exact(&mut color)?;
+                let mut color_bytes = [0; 3];
+                chunk_reader.read_exact(&mut color_bytes)?;
+                let color = color_bytes.into();
 
-                let mut points: Vec<[u16; 2]> = Vec::new();
+                let mut points: Vec<(u16, u16)> = Vec::new();
                 while chunk_reader.position() < start_pos + size as u64 {
                     let x = chunk_reader.read_u16::<BigEndian>()?;
                     let y = chunk_reader.read_u16::<BigEndian>()?;
 
-                    points.push([x, y]);
+                    points.push((x, y));
                 }
 
                 Object::Path(PathObject { color, points })

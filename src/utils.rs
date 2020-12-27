@@ -10,9 +10,9 @@ pub fn blank_image(width: u16, height: u16) -> RgbImage {
     .unwrap()
 }
 
-pub fn convert_points(points: Vec<[u16; 2]>) -> Vec<Point<i32>> {
+pub fn convert_points(points: Vec<(u16, u16)>) -> Vec<Point<i32>> {
     points
         .iter()
-        .map(|[x, y]| Point::new(*x as i32, *y as i32))
+        .map(|(x, y)| Point::new(*x as i32, *y as i32))
         .collect()
 }

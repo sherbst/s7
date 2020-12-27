@@ -1,4 +1,4 @@
-use super::image::Image;
+use super::s7_image::Image;
 use std::fs::File;
 
 pub fn read_png(path: &str) -> Image {
