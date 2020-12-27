@@ -147,12 +147,7 @@ fn get_object(image: &mut Image, start_coords: Coords) -> (Object, (Coords, Coor
     }
 }
 
-fn get_objects(
-    image: &mut Image,
-    x_range: Range<u16>,
-    y_range: Range<u16>,
-    ignore_color_pix: Option<Coords>,
-) -> Vec<Object> {
+fn get_objects(image: &mut Image, x_range: Range<u16>, y_range: Range<u16>) -> Vec<Object> {
     let mut objects: Vec<Object> = Vec::new();
 
     for y in y_range {
@@ -166,21 +161,11 @@ fn get_objects(
             image.set_pixel_is_checked(coords, true);
 
             if is_edge_pixel(image, coords) {
-                match ignore_color_pix {
-                    Some(cmp_coords) => {
-                        // if compare_pixels(image, coords, cmp_coords) {
-                        //     continue;
-                        // }
-                    }
-                    None => (),
-                }
-
                 let (object, bounds) = get_object(image, coords);
                 objects.push(object);
 
                 let ([min_x, max_y], [max_x, min_y]) = bounds;
-                let mut interior_paths =
-                    get_objects(image, min_x..max_x, min_y..max_y, Some(coords));
+                let mut interior_paths = get_objects(image, min_x..max_x, min_y..max_y);
                 objects.append(&mut interior_paths);
             }
         }
@@ -193,7 +178,7 @@ pub fn encode(mut image: Image) -> Entity {
     let width = image.width.clone();
     let height = image.height.clone();
 
-    let objects = get_objects(&mut image, 0..width, 0..height, None);
+    let objects = get_objects(&mut image, 0..width, 0..height);
 
     let data_chunk = DataChunk { objects };
 
