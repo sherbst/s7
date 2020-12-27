@@ -1,7 +1,7 @@
 use crate::entity::{Entity, Object};
 use crate::utils::blank_image;
 use crate::utils::convert_points;
-use image::{Rgb, RgbImage};
+use image::RgbImage;
 use imageproc::drawing::{draw_hollow_rect_mut, draw_polygon_mut};
 use imageproc::rect::Rect;
 

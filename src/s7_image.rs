@@ -1,5 +1,5 @@
 use image::RgbImage;
-use std::convert::{From, Into};
+use std::convert::From;
 
 pub type Coords = (u16, u16);
 
@@ -40,8 +40,8 @@ impl Image {
         return Self {
             width: image.width() as u16,
             height: image.height() as u16,
-            buf: image,
             checked_pixels: vec![false; (image.width() * image.height()) as usize],
+            buf: image,
         };
     }
 
@@ -66,10 +66,8 @@ impl Image {
     }
 
     pub fn set_pixel_is_checked(&mut self, coords: Coords, is_checked: bool) {
-        let pix = self
-            .checked_pixels
-            .get_mut(self.get_pixel_index(coords))
-            .unwrap();
+        let index = self.get_pixel_index(coords);
+        let pix = self.checked_pixels.get_mut(index).unwrap();
 
         *pix = is_checked;
     }

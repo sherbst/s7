@@ -1,21 +1,12 @@
 use super::s7_image::Image;
-use std::fs::File;
+use image::io::Reader as ImageReader;
+use image::DynamicImage;
 
 pub fn read_png(path: &str) -> Image {
-    let in_file = File::open(path).unwrap();
+    let image = ImageReader::open(path).unwrap().decode().unwrap();
 
-    let mut decoder = png::Decoder::new(in_file);
-    decoder.set_transformations(png::Transformations::EXPAND);
-
-    let (info, mut reader) = decoder.read_info().unwrap();
-
-    let mut buf = vec![0; info.buffer_size()];
-    reader.next_frame(&mut buf).unwrap();
-
-    let pixels = buf
-        .chunks(4)
-        .map(|x| (x[0], x[1], x[2], x[3], false))
-        .collect();
-
-    return Image::new(buf, pixels, info.width as u16, info.height as u16);
+    match image {
+        DynamicImage::ImageRgb8(rgb_image) => Image::new(rgb_image),
+        _ => panic!("Only accepts RGB images for now"),
+    }
 }
