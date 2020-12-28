@@ -1,29 +1,13 @@
+use super::neighboring_coords::NeighboringCoords;
 use crate::entity::{DataChunk, Entity, HeaderChunk, Object, PathObject};
 use crate::s7_image::{Coords, Image};
 use std::ops::Range;
 use std::time::SystemTime;
 
 fn has_unique_neighbors(image: &Image, coords: Coords) -> bool {
-    let (pix_x, pix_y) = coords;
-
-    for x in -1..2 {
-        for y in -1..2 {
-            if x == 0 && y == 0 {
-                continue;
-            }
-
-            let neighbor_x = pix_x as i32 + x;
-            let neighbor_y = pix_y as i32 + y;
-
-            if neighbor_x < 0 || neighbor_y < 0 {
-                continue;
-            }
-
-            let neighbor_coords = (neighbor_x as u16, neighbor_y as u16);
-
-            if !image.compare_pixels(neighbor_coords, coords) {
-                return true;
-            }
+    for next_coords in NeighboringCoords::all_neighbors(coords) {
+        if !image.compare_pixels(next_coords, coords) {
+            return true;
         }
     }
 
@@ -43,38 +27,21 @@ fn is_edge_pixel(image: &Image, coords: Coords) -> bool {
 }
 
 fn get_next_pixel_coords(image: &Image, coords: Coords) -> Option<Coords> {
-    let (pix_x, pix_y) = coords;
+    for neighbor_coords in NeighboringCoords::neighbors(coords) {
+        if !image.is_valid_coords(neighbor_coords) {
+            continue;
+        }
 
-    for y in -1..2 {
-        for x in -1..2 {
-            if x == 0 && y == 0 {
-                continue;
-            }
+        if image.pixel_is_checked(neighbor_coords) {
+            continue;
+        }
 
-            let neighbor_x = pix_x as i32 + x;
-            let neighbor_y = pix_y as i32 + y;
+        if !is_edge_pixel(image, neighbor_coords) {
+            continue;
+        }
 
-            if neighbor_x < 0 || neighbor_y < 0 {
-                continue;
-            }
-
-            let neighbor_coords = (neighbor_x as u16, neighbor_y as u16);
-
-            if !image.is_valid_coords(neighbor_coords) {
-                continue;
-            }
-
-            if image.pixel_is_checked(neighbor_coords) {
-                continue;
-            }
-
-            if !is_edge_pixel(image, neighbor_coords) {
-                continue;
-            }
-
-            if image.compare_pixels(coords, neighbor_coords) {
-                return Some(neighbor_coords);
-            }
+        if image.compare_pixels(coords, neighbor_coords) {
+            return Some(neighbor_coords);
         }
     }
 
