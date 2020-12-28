@@ -5,7 +5,7 @@ pub type Coords = (u16, u16);
 
 const RGB_DIFFERENCE: u8 = 3;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Rgb(pub u8, pub u8, pub u8);
 
 impl From<Rgb> for image::Rgb<u8> {

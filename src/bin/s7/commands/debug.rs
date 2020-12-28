@@ -76,7 +76,7 @@ fn draw_outlines(image: &mut RgbImage, entity: &Entity, color_type: ColorType) {
                     }
                 }
                 ColorType::Original => match object {
-                    Object::Path(path) => Rgb(path.color),
+                    Object::Path(path) => path.color.into(),
                 },
             };
 
@@ -85,11 +85,11 @@ fn draw_outlines(image: &mut RgbImage, entity: &Entity, color_type: ColorType) {
                     let a = path.points.iter().skip(1);
                     let b = path.points.iter().take(path.points.len() - 1);
 
-                    let lines: Vec<(&[u16; 2], &[u16; 2])> = a.zip(b).collect();
+                    let lines: Vec<(&(u16, u16), &(u16, u16))> = a.zip(b).collect();
 
                     for (a, b) in lines {
-                        let [ax, ay] = a;
-                        let [bx, by] = b;
+                        let (ax, ay) = a;
+                        let (bx, by) = b;
 
                         draw::draw_line_segment_mut(
                             image,
