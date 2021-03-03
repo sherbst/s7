@@ -3,7 +3,7 @@ use std::convert::From;
 
 pub type Coords = (u16, u16);
 
-const RGB_DIFFERENCE: u8 = 3;
+const RGB_DIFFERENCE: u8 = 10;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Rgb(pub u8, pub u8, pub u8);
